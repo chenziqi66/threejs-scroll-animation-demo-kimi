@@ -1,6 +1,5 @@
 import './style.css';
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 // Setup
 
@@ -60,12 +59,27 @@ Array(200).fill().forEach(addStar);
 
 // Background
 
-const spaceTexture = new THREE.TextureLoader().load('space.jpg');
-scene.background = spaceTexture;
+const textureLoader = new THREE.TextureLoader();
+
+textureLoader.load('space.jpg',
+  function (texture) {
+    scene.background = texture;
+  },
+  undefined,
+  function (err) {
+    console.error('Failed to load space.jpg:', err);
+  }
+);
 
 // Avatar
 
-const jeffTexture = new THREE.TextureLoader().load('jeff.png');
+const jeffTexture = textureLoader.load('jeff.png',
+  undefined,
+  undefined,
+  function (err) {
+    console.error('Failed to load jeff.png:', err);
+  }
+);
 
 const jeff = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), new THREE.MeshBasicMaterial({ map: jeffTexture }));
 
@@ -73,8 +87,20 @@ scene.add(jeff);
 
 // Moon
 
-const moonTexture = new THREE.TextureLoader().load('moon.jpg');
-const normalTexture = new THREE.TextureLoader().load('normal.jpg');
+const moonTexture = textureLoader.load('moon.jpg',
+  undefined,
+  undefined,
+  function (err) {
+    console.error('Failed to load moon.jpg:', err);
+  }
+);
+const normalTexture = textureLoader.load('normal.jpg',
+  undefined,
+  undefined,
+  function (err) {
+    console.error('Failed to load normal.jpg:', err);
+  }
+);
 
 const moon = new THREE.Mesh(
   new THREE.SphereGeometry(3, 32, 32),
@@ -94,6 +120,9 @@ jeff.position.x = 2;
 
 // Scroll Animation
 
+let scrollTimeout;
+let isScrolling = false;
+
 function moveCamera() {
   const t = document.body.getBoundingClientRect().top;
   moon.rotation.x += 0.05;
@@ -108,8 +137,28 @@ function moveCamera() {
   camera.rotation.y = t * -0.0002;
 }
 
-document.body.onscroll = moveCamera;
+function onScroll() {
+  if (!isScrolling) {
+    window.requestAnimationFrame(function() {
+      moveCamera();
+      isScrolling = false;
+    });
+    isScrolling = true;
+  }
+}
+
+document.body.onscroll = onScroll;
 moveCamera();
+
+// Window Resize Handling
+
+function onWindowResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+window.addEventListener('resize', onWindowResize);
 
 // Animation Loop
 
